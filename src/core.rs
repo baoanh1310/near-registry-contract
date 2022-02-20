@@ -17,4 +17,10 @@ impl Contract {
         env::log("Added a new entry".as_bytes());
     }
 
+    #[payable]
+    pub fn upvote(&mut self, entry_id: usize) {
+        let amount = env::attached_deposit();
+        let entry: &mut Entry = self.entries.get_mut(entry_id).unwrap();
+        entry.total_votes = entry.total_votes + amount;
+    }
 }
