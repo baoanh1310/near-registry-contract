@@ -38,6 +38,11 @@ impl Contract {
         self.entries.len()
     }
 
+    pub fn get_list_entries(&self) -> Vec<Entry> {
+        let entries = self.entries.to_vec();
+        return entries;
+    }
+
     pub fn get_entry_total_votes(&self, entry_id: usize) -> u128 {
         let entry = self.entries.get(entry_id).unwrap();
         return entry.total_votes;
