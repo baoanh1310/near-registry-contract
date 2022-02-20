@@ -1,38 +1,75 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::near_bindgen;
+#[allow(unused_imports)]
+use near_sdk::{env, near_bindgen, setup_alloc, Promise, PromiseResult, AccountId, Timestamp, Balance};
+use near_sdk::serde::{Deserialize, Serialize};
+
+pub use crate::models::*;
+pub use crate::core::*;
+pub use crate::enumeration::*;
+
+mod models;
+mod core;
+mod enumeration;
+
+setup_alloc!();
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct Contract {
-    // SETUP CONTRACT STATE
+    pub owner_id: AccountId,
+    pub entries: Vec<Entry>
 }
 
 #[near_bindgen]
 impl Contract {
-    // ADD CONTRACT METHODS HERE
+    #[init]
+    pub fn new(owner_id: AccountId) -> Self {
+        Self {
+            owner_id: owner_id,
+            entries: Vec::new()
+        }
+    }
 }
 
-/*
- * the rest of this file sets up unit tests
- * to run these, the command will be:
- * cargo test --package rust-template -- --nocapture
- * Note: 'rust-template' comes from Cargo.toml's 'name' key
- */
 
-// use the attribute below for unit tests
 #[cfg(test)]
 mod tests {
     use super::*;
-    use near_sdk::test_utils::{get_logs, VMContextBuilder};
-    use near_sdk::{testing_env, AccountId};
 
-    // part of writing unit tests is setting up a mock context
-    // provide a `predecessor` here, it'll modify the default context
-    fn get_context(predecessor: AccountId) -> VMContextBuilder {
+    use near_sdk::test_utils::{VMContextBuilder, accounts};
+    use near_sdk::{testing_env};
+    use near_sdk::MockedBlockchain;
+
+    fn get_context(is_view: bool) -> VMContextBuilder {
         let mut builder = VMContextBuilder::new();
-        builder.predecessor_account_id(predecessor);
+        builder.
+        current_account_id(accounts(0))
+        .signer_account_id(accounts(0))
+        .predecessor_account_id(accounts(0))
+        .is_view(is_view);
+
         builder
     }
 
-    // TESTS HERE
+    #[test]
+    fn test_create_entry() {
+        let mut context = get_context(false);
+        testing_env!(context.build());
+        
+        // Init contract
+        let mut contract = Contract::new(accounts(0).to_string());
+
+        testing_env!(
+            context.storage_usage(env::storage_usage())
+            .predecessor_account_id(accounts(0))
+            .build()
+        );
+
+        contract.create_entry("TITLE".to_string(), "PROJECT DESCRIPTION".to_string(), "https://near.org/".to_string());
+
+        assert_eq!(contract.get_number_entries(), 1);
+        assert_eq!(contract.get_entry_total_votes(0), 0);
+    }
+
+
 }
